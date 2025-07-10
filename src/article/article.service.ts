@@ -26,28 +26,27 @@ export class ArticleService {
     return this.repo.save(article);
   }
 
-  findAll(user: { role: string }) {
-    if (user?.role === 'admin') {
-      return this.repo.find();
-    }
-    return this.repo.find({ where: { isPublic: true } });
+async findAll(tags: string | undefined, user?: { role?: string }) {
+  const qb = this.repo.createQueryBuilder('a');
+  if (!user) {
+    qb.andWhere('a."isPublic" = true');
   }
 
-  async findOne(id: string, user?: { userId: string; role: string }) {
-    const art = await this.repo.findOne({
-      where: { id },
-      relations: ['author'],
-    });
-    if (!art) throw new NotFoundException('Article not found');
-
-    const isOwner = art.author.id === user?.userId;
-    const isAdmin = user?.role === 'admin';
-
-    if (!art.isPublic && !isOwner && !isAdmin) {
-      throw new ForbiddenException();
-    }
-    return art;
+  if (tags) {
+    const list = tags.split(',').map((t) => t.trim().toLowerCase());
+    qb.andWhere(':tags && a.tags', { tags: list });
   }
+  return qb.orderBy('a.createdAt', 'DESC').getMany();
+}
+
+async findOne(id: string, user?: { userId?: string; role?: string }) {
+  const art = await this.repo.findOne({ where: { id } });
+  if (!art) throw new NotFoundException();
+
+  if (!user && !art.isPublic) throw new ForbiddenException();
+
+  return art;
+}
 
   async update(
     id: string,

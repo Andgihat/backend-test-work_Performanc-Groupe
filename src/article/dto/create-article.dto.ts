@@ -1,15 +1,13 @@
-import { IsBoolean, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsArray, IsBoolean, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateArticleDto {
-  @IsString()
-  @MinLength(3)
-  title: string;
+  @IsString() @MinLength(3) title: string;
+  @IsString() body: string;
 
-  @IsString()
-  body: string;
+  @IsOptional() @IsBoolean() isPublic?: boolean = true;
 
-  @IsOptional()
-  @IsBoolean()
-  isPublic?: boolean = true;
+  @IsOptional() @IsArray() @IsString({ each: true })
+  tags?: string[] = [];
 }
+
 
